@@ -28,8 +28,8 @@ impl<'a, V: Clone + Default + Debug> Tabl<V> {
         Tabl {
             count: 0,
             entries: vec![Entry::<_>::default(); capacity as usize], // only gonna work on 64 bit machines hehe
-        } // kind weird and inefficient that we have to use default entries. In C do we actaully take up the meory when we grow an array?
-          // maybe it's at riskj of overwriting in C but not here?
+        } // kind weird and inefficient that we have to use default entries. In C do we actually take up the memory when we grow an array?
+          // maybe it's at risk of overwriting in C but not here?
     }
 
     fn increment_count(&mut self) {
@@ -71,6 +71,29 @@ impl<'a, V: Clone + Default + Debug> Tabl<V> {
         &mut self.entries[index as usize]
     }
 
+    fn get_key_index(&self, key: &str) -> Option<u64> {
+        let cap = self.entries.capacity() as u64;
+        let mut index = fnv1a(key.as_bytes()) % cap;
+
+        for _ in 0..cap {
+            let entry = &self.entries[index as usize]; // only gonna work on 64 bit machines hehe
+            if entry.key == key {
+                return Some(index);
+            }
+
+            index = (index + 1) % cap;
+        }
+
+        return None;
+    }
+
+    fn get(&self, key: &str) -> Option<&V> {
+        match self.get_key_index(key) {
+            Some(index) => Some(&self.entries[index as usize].value),
+            None => None,
+        }
+    }
+
     fn set(&mut self, key: &str, value: V) -> bool {
         let cap = self.entries.capacity() as f64;
         if (self.count + 1) as f64 > cap * MAX_LOAD {
@@ -102,5 +125,7 @@ fn main() {
         table.set(&s, val);
     }
 
-    println!("{:?}", table.entries);
+    // println!("{:?}", table.entries);
+    println!("{:?}", &table.entries);
+    println!("{:?}", table.get(&String::from("29")));
 }
